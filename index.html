@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projekt DRIVE — Flottenanalyse</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#13262E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DRIVE">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  :root{
+    --petrol-950:#0D1B20;
+    --petrol-900:#13262E;
+    --petrol-800:#1B343D;
+    --petrol-700:#27474F;
+    --petrol-600:#3A5E66;
+    --cream:#F7F4EE;
+    --cream-dim:#EDE8DD;
+    --paper:#FFFFFF;
+    --ink:#1A2226;
+    --ink-soft:#5C6B70;
+    --line:#D8D2C4;
+    --green:#3FA66B;
+    --green-deep:#2B7A4F;
+    --green-pale:#E3F1E8;
+    --amber:#C8862B;
+    --amber-pale:#FBEFDC;
+    --red:#B0452E;
+    --red-pale:#F8E6E0;
+    --gold:#B8923D;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--cream);color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  ::selection{background:var(--green-pale);}
+  .font-display{font-family:'Fraunces',serif;}
+  .font-mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit; cursor:pointer; border:none; background:none;}
+  .container{max-width:1180px;margin:0 auto;padding:0 32px;}
+  @media(max-width:680px){.container{padding:0 20px;}}
+
+  /* ============ NAV ============ */
+  .nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(247,244,238,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1180px;margin:0 auto;padding:18px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .logo{display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px;}
+  .logo-mark{
+    width:30px;height:30px;border-radius:8px;
+    background:var(--petrol-900);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--green); font-family:'JetBrains Mono'; font-weight:700; font-size:13px;
+  }
+  .nav-steps{display:flex; gap:6px; align-items:center;}
+  .nav-dot{width:7px;height:7px;border-radius:50%;background:var(--line); transition:.3s;}
+  .nav-dot.active{background:var(--green); width:22px; border-radius:4px;}
+  .nav-dot.done{background:var(--petrol-700);}
+
+  /* ============ HERO ============ */
+  .hero{
+    background:var(--petrol-900);
+    color:var(--cream);
+    padding:120px 0 100px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      radial-gradient(ellipse 600px 400px at 85% 15%, rgba(63,166,107,0.18), transparent 60%),
+      repeating-linear-gradient(100deg, transparent 0px, transparent 78px, rgba(247,244,238,0.025) 79px, transparent 80px);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative; max-width:1180px;margin:0 auto;padding:0 32px;}
+  .eyebrow{
+    font-family:'JetBrains Mono'; font-size:12px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--green);
+    display:flex; align-items:center; gap:10px; margin-bottom:28px;
+  }
+  .eyebrow::before{content:"";width:24px;height:1px;background:var(--green);}
+  .hero h1{
+    font-family:'Fraunces',serif; font-weight:600;
+    font-size:clamp(40px,6vw,72px); line-height:1.02; letter-spacing:-0.01em;
+    margin:0 0 28px; max-width:780px;
+  }
+  .hero h1 em{font-style:italic; color:var(--green); font-weight:500;}
+  .hero p.lede{
+    font-size:19px; line-height:1.6; color:rgba(247,244,238,0.72);
+    max-width:540px; margin:0 0 44px;
+  }
+  .cta-row{display:flex; align-items:center; gap:28px; flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--green); color:var(--petrol-950);
+    padding:17px 32px; border-radius:10px; font-weight:600; font-size:16px;
+    display:inline-flex; align-items:center; gap:10px;
+    transition:transform .18s ease, box-shadow .18s ease;
+    box-shadow:0 1px 0 rgba(0,0,0,0.1);
+  }
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 8px 24px rgba(63,166,107,0.35);}
+  .btn-primary svg{transition:transform .18s ease;}
+  .btn-primary:hover svg{transform:translateX(3px);}
+  .btn-ghost{
+    color:rgba(247,244,238,0.65); font-size:14px; font-weight:500;
+    border-bottom:1px solid rgba(247,244,238,0.25); padding-bottom:3px;
+  }
+  .btn-ghost:hover{color:var(--cream); border-color:var(--cream);}
+
+  .hero-stats{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    margin-top:88px; border-top:1px solid rgba(247,244,238,0.14);
+    padding-top:36px;
+    max-width:780px;
+  }
+  .hero-stat .num{font-family:'JetBrains Mono'; font-size:34px; font-weight:700; color:var(--green); line-height:1;}
+  .hero-stat .lbl{font-size:13px; color:rgba(247,244,238,0.55); margin-top:8px; line-height:1.4;}
+
+  /* ============ SECTION GENERIC ============ */
+  .section{padding:90px 0;}
+  .section-head{max-width:620px; margin:0 0 56px;}
+  .section-eyebrow{
+    font-family:'JetBrains Mono'; font-size:12px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--green-deep); margin-bottom:14px; font-weight:600;
+  }
+  .section h2{
+    font-family:'Fraunces',serif; font-weight:600; font-size:clamp(28px,4vw,42px);
+    line-height:1.1; margin:0 0 16px; color:var(--ink);
+  }
+  .section p.sub{font-size:16px; line-height:1.65; color:var(--ink-soft); margin:0;}
+
+  /* ============ WIZARD ============ */
+  .wizard-shell{
+    background:var(--paper); border:1px solid var(--line); border-radius:20px;
+    padding:48px; box-shadow:0 1px 3px rgba(0,0,0,0.03);
+  }
+  @media(max-width:680px){.wizard-shell{padding:28px 22px;}}
+  .wizard-progress{display:flex; gap:8px; margin-bottom:40px;}
+  .wizard-progress .bar{flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden;}
+  .wizard-progress .bar i{display:block; height:100%; background:var(--green); width:0%; transition:width .4s ease;}
+  .step-label{
+    font-family:'JetBrains Mono'; font-size:12px; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;
+  }
+  .step-title{font-family:'Fraunces',serif; font-size:28px; font-weight:600; margin:0 0 8px;}
+  .step-desc{color:var(--ink-soft); font-size:15px; margin:0 0 36px; line-height:1.55;}
+
+  .field-group{margin-bottom:32px;}
+  .field-label{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:14px; font-weight:600; margin-bottom:14px; color:var(--ink);
+  }
+  .field-value{font-family:'JetBrains Mono'; color:var(--green-deep); font-weight:700; font-size:15px;}
+  input[type=range]{
+    -webkit-appearance:none; width:100%; height:6px; border-radius:3px;
+    background:var(--cream-dim); outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
+    background:var(--paper); border:3px solid var(--green); cursor:pointer;
+    box-shadow:0 1px 4px rgba(0,0,0,0.15);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:22px; height:22px; border-radius:50%;
+    background:var(--paper); border:3px solid var(--green); cursor:pointer;
+  }
+  .field-hint{font-size:12.5px; color:var(--ink-soft); margin-top:8px;}
+
+  .toggle-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .toggle-chip{
+    padding:11px 20px; border-radius:30px; border:1.5px solid var(--line);
+    font-size:14px; font-weight:500; color:var(--ink-soft); background:var(--paper);
+    transition:.15s ease;
+  }
+  .toggle-chip.selected{
+    background:var(--petrol-900); border-color:var(--petrol-900); color:var(--cream);
+  }
+  .toggle-chip:hover:not(.selected){border-color:var(--petrol-600); color:var(--ink);}
+
+  .priority-row{
+    display:grid; grid-template-columns:200px 1fr 110px;
+    align-items:center; gap:20px; padding:18px 0;
+    border-bottom:1px solid var(--cream-dim);
+  }
+  .priority-row:last-child{border-bottom:none;}
+  .priority-name{font-size:14.5px; font-weight:600;}
+  .priority-name .sub{display:block; font-size:12px; font-weight:400; color:var(--ink-soft); margin-top:2px;}
+  .priority-level{
+    font-family:'JetBrains Mono'; font-size:13px; font-weight:600; text-align:right;
+  }
+  @media(max-width:680px){
+    .priority-row{grid-template-columns:1fr; gap:10px;}
+    .priority-level{text-align:left;}
+  }
+
+  .wizard-nav{display:flex; justify-content:space-between; margin-top:44px;}
+  .btn-back{color:var(--ink-soft); font-size:14px; font-weight:600; display:flex; align-items:center; gap:6px;}
+  .btn-back:hover{color:var(--ink);}
+  .btn-next{
+    background:var(--petrol-900); color:var(--cream);
+    padding:15px 30px; border-radius:9px; font-weight:600; font-size:15px;
+    display:flex; align-items:center; gap:8px; transition:.15s ease;
+  }
+  .btn-next:hover{background:var(--petrol-800);}
+  .btn-next:disabled{opacity:0.35; cursor:not-allowed;}
+  .btn-next.calculating{background:var(--green-deep);}
+
+  /* ============ RESULTS ============ */
+  .result-hero{
+    background:var(--petrol-900); color:var(--cream); padding:64px 0 56px; text-align:center;
+  }
+  .result-hero .eyebrow{justify-content:center;}
+  .result-hero .eyebrow::before{display:none;}
+  .result-hero h2{
+    font-family:'Fraunces',serif; font-size:clamp(30px,5vw,46px); font-weight:600; margin:0 0 10px;
+  }
+  .result-hero p{color:rgba(247,244,238,0.65); font-size:15px; max-width:480px; margin:0 auto;}
+
+  .cards-row{
+    display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:24px;
+    margin-top:32px; position:relative; z-index:5;
+  }
+  @media(max-width:900px){.cards-row{grid-template-columns:1fr; margin-top:32px;}}
+
+  .car-card{
+    background:var(--paper); border-radius:18px; overflow:hidden;
+    border:1px solid var(--line); display:flex; flex-direction:column;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .car-card:hover{transform:translateY(-4px); box-shadow:0 16px 40px rgba(13,27,32,0.12);}
+  .car-card.rank-1{border:2px solid var(--gold); box-shadow:0 20px 50px rgba(184,146,61,0.18);}
+
+  .card-medal{
+    padding:14px 24px; font-family:'JetBrains Mono'; font-size:12px; font-weight:700;
+    letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; gap:8px;
+  }
+  .rank-1 .card-medal{background:var(--gold); color:var(--petrol-950);}
+  .rank-2 .card-medal{background:var(--petrol-700); color:var(--cream);}
+  .rank-3 .card-medal{background:var(--petrol-600); color:var(--cream);}
+
+  .car-visual{
+    height:150px; background:var(--cream-dim);
+    display:flex; align-items:center; justify-content:center;
+    position:relative; overflow:hidden;
+  }
+  .car-visual svg{width:72%; height:auto;}
+  .car-visual .antrieb-tag{
+    position:absolute; top:12px; right:14px;
+    font-family:'JetBrains Mono'; font-size:10.5px; font-weight:700;
+    background:rgba(255,255,255,0.85); padding:4px 10px; border-radius:20px;
+    color:var(--petrol-800); letter-spacing:0.03em;
+  }
+
+  .car-body{padding:24px 24px 8px;}
+  .car-name{font-family:'Fraunces',serif; font-size:21px; font-weight:600; margin:0 0 4px; line-height:1.15;}
+  .car-score-row{display:flex; align-items:baseline; gap:8px; margin:14px 0 22px;}
+  .car-score{font-family:'JetBrains Mono'; font-size:32px; font-weight:700; color:var(--green-deep);}
+  .car-score-max{font-family:'JetBrains Mono'; font-size:14px; color:var(--ink-soft);}
+
+  .car-specs{display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; margin-bottom:20px;}
+  .spec{}
+  .spec .k{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;}
+  .spec .v{font-family:'JetBrains Mono'; font-size:14.5px; font-weight:600;}
+  .spec .v.muted{color:var(--ink-soft); font-weight:500;}
+
+  .why-toggle{
+    width:100%; padding:14px 24px; border-top:1px solid var(--cream-dim);
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13.5px; font-weight:600; color:var(--petrol-800);
+  }
+  .why-toggle:hover{background:var(--cream);}
+  .why-toggle svg{transition:transform .2s ease;}
+  .why-toggle.open svg{transform:rotate(180deg);}
+  .why-panel{
+    padding:0 24px 22px; font-size:13.5px; line-height:1.6; color:var(--ink-soft);
+    max-height:0; overflow:hidden; transition:max-height .3s ease;
+  }
+  .why-panel.open{max-height:300px; padding-top:4px;}
+  .why-panel b{color:var(--ink); font-weight:600;}
+
+  /* ============ EXCLUDED ============ */
+  .excluded-section{padding:80px 0 100px;}
+  .excluded-list{display:flex; flex-direction:column; gap:1px; background:var(--line); border-radius:14px; overflow:hidden; border:1px solid var(--line);}
+  .excluded-item{
+    background:var(--paper); padding:18px 24px; display:grid;
+    grid-template-columns:180px 1fr 140px; gap:20px; align-items:center;
+  }
+  @media(max-width:680px){.excluded-item{grid-template-columns:1fr; gap:8px;}}
+  .excluded-name{font-weight:600; font-size:14.5px;}
+  .excluded-reason{font-size:13.5px; color:var(--ink-soft);}
+  .excluded-badge{
+    font-family:'JetBrains Mono'; font-size:11px; font-weight:700; text-transform:uppercase;
+    padding:6px 12px; border-radius:6px; text-align:center; letter-spacing:0.03em;
+  }
+  .badge-budget{background:var(--red-pale); color:var(--red);}
+  .badge-range{background:var(--amber-pale); color:var(--amber);}
+  .badge-score{background:var(--cream-dim); color:var(--ink-soft);}
+
+  /* ============ GAUGE (signature element) ============ */
+  .gauge-wrap{position:relative; width:120px; height:74px;}
+  .gauge-wrap svg{width:100%; height:100%;}
+  .gauge-needle{transition:transform 1s cubic-bezier(.34,1.4,.64,1);}
+
+  /* ============ DASHBOARD ============ */
+  .dash-section{background:var(--petrol-950); padding:90px 0; color:var(--cream);}
+  .dash-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:48px;}
+  @media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}  .dash-card{
+    background:var(--petrol-900); border:1px solid rgba(247,244,238,0.08);
+    border-radius:16px; padding:28px;
+  }
+  .dash-card h4{
+    font-family:'JetBrains Mono'; font-size:12px; text-transform:uppercase;
+    letter-spacing:0.08em; color:rgba(247,244,238,0.5); margin:0 0 22px; font-weight:600;
+  }
+  .bar-row{display:flex; align-items:center; gap:14px; margin-bottom:14px;}
+  .bar-label{width:130px; font-size:12.5px; color:rgba(247,244,238,0.75); flex-shrink:0;}
+  .bar-track{flex:1; height:20px; background:rgba(247,244,238,0.08); border-radius:5px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:5px; transition:width 1s ease;}
+  .bar-val{width:70px; text-align:right; font-family:'JetBrains Mono'; font-size:12px; flex-shrink:0;}
+
+  /* ============ FOOTER ============ */
+  footer{background:var(--cream-dim); padding:48px 0; border-top:1px solid var(--line);}
+  .footer-row{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
+  .footer-row p{font-size:13px; color:var(--ink-soft); margin:0;}
+
+  .reveal{opacity:0; transform:translateY(16px); transition:opacity .5s ease, transform .5s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+
+  /* ============ PWA INSTALL BANNER ============ */
+  .install-banner{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(120%);
+    background:var(--petrol-900); color:var(--cream);
+    border-radius:14px; padding:16px 18px; display:flex; align-items:center; gap:14px;
+    box-shadow:0 12px 32px rgba(13,27,32,0.35);
+    z-index:200; max-width:380px; width:calc(100% - 40px);
+    transition:transform .4s cubic-bezier(.34,1.4,.64,1);
+  }
+  .install-banner.show{transform:translateX(-50%) translateY(0);}
+  .install-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--green);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  }
+  .install-text{flex:1; min-width:0;}
+  .install-text .t1{font-size:13.5px; font-weight:600; margin-bottom:2px;}
+  .install-text .t2{font-size:12px; color:rgba(247,244,238,0.6);}
+  .install-actions{display:flex; gap:8px; flex-shrink:0;}
+  .install-btn{
+    background:var(--green); color:var(--petrol-950); font-weight:600; font-size:13px;
+    padding:9px 14px; border-radius:8px; white-space:nowrap;
+  }
+  .install-dismiss{
+    color:rgba(247,244,238,0.5); font-size:18px; padding:4px 6px; line-height:1;
+  }
+  .install-dismiss:hover{color:var(--cream);}
+
+  .nav-install{
+    display:flex; align-items:center; gap:6px;
+    font-size:13px; font-weight:600; color:var(--petrol-800);
+    border:1.5px solid var(--line); padding:8px 14px; border-radius:8px;
+    transition:.15s ease;
+  }
+  .nav-install:hover{border-color:var(--petrol-700); background:var(--cream-dim);}
+  @media(max-width:560px){.nav-install span{display:none;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const {useState, useEffect, useRef} = React;
+
+/* ============================================================
+   FAHRZEUGDATEN — direkt aus dem Excel-DSS (FAHRZEUGDATEN-Sheet)
+   ============================================================ */
+const FAHRZEUGE = [
+  // F01: BMW 318i Touring — Benzin (ab 48.300 €, 6,7 l/100 km, 750–880 km Reichweite)
+  {id:'F01', name:'BMW 318i Touring', antrieb:'Benzin', kaufpreis:48300, reichweite:815, co2:156.4, kraftstoff100:6.7, steuerPct:0.01, infra:5, afa:670.83, sprit5j:1519*5, wartung5j:3445, kfzSteuer:92, kraftfSteuer:483, versicherung:924, restwert:28111},
+  // F02: Skoda Oktavia Essence 1.5l TSI — Benzin (ab 29.140 €, 5,2–5,7 l/100 km, 650–850 km)
+  {id:'F02', name:'Skoda Oktavia Essence 1.5l TSI', antrieb:'Benzin', kaufpreis:29140, reichweite:750, co2:129.2, kraftstoff100:5.45, steuerPct:0.01, infra:5, afa:404.72, sprit5j:1247*5, wartung5j:3445, kfzSteuer:74, kraftfSteuer:291, versicherung:924, restwert:16959},
+  // F03: VW Passat 2.0 TDI SCR — Diesel (ab 44.365 €, 4,9–5,0 l/100 km, bis 1320 km)
+  {id:'F03', name:'VW Passat 2.0 TDI SCR', antrieb:'Diesel', kaufpreis:44365, reichweite:1320, co2:129.4, kraftstoff100:4.95, steuerPct:0.01, infra:5, afa:616.18, sprit5j:1078*5, wartung5j:3445, kfzSteuer:308, kraftfSteuer:444, versicherung:924, restwert:25820},
+  // F04: Skoda Essence 2.0l TDI — Diesel (ab 33.540 €, 4,3 l/100 km, 770–915 km)
+  {id:'F04', name:'Skoda Essence 2.0l TDI', antrieb:'Diesel', kaufpreis:33540, reichweite:843, co2:113.5, kraftstoff100:4.3, steuerPct:0.01, infra:5, afa:465.83, sprit5j:928*5, wartung5j:3445, kfzSteuer:226, kraftfSteuer:335, versicherung:924, restwert:19520},
+  // F05: Mercedes CLA 250+ EQ — Elektro (ab 43.083,60 €, 792 km, 12,3 kWh/100 km)
+  {id:'F05', name:'Mercedes CLA 250+ EQ', antrieb:'Elektro', kaufpreis:43084, reichweite:792, co2:0, kraftstoff100:12.3, steuerPct:0.0025, infra:3, afa:598.39, sprit5j:600*5, wartung5j:2825, kfzSteuer:0, kraftfSteuer:108, versicherung:924, restwert:25075},
+  // F06: Tesla Model 3 — Elektro (ab 37.970 €, 534 km, 13,0 kWh/100 km)
+  {id:'F06', name:'Tesla Model 3', antrieb:'Elektro', kaufpreis:37970, reichweite:534, co2:0, kraftstoff100:13.0, steuerPct:0.0025, infra:3, afa:527.36, sprit5j:634*5, wartung5j:2825, kfzSteuer:0, kraftfSteuer:95, versicherung:924, restwert:22099},
+  // F07: Dacia Bigster Extreme ECO-G 140 — LPG (ab 27.490 €, bis 1450 km, LPG 7,1 l/100 km)
+  {id:'F07', name:'Dacia Bigster Extreme ECO-G 140', antrieb:'LPG', kaufpreis:27490, reichweite:1450, co2:127.1, kraftstoff100:7.1, steuerPct:0.01, infra:4, afa:381.81, sprit5j:780*5, wartung5j:3445, kfzSteuer:66, kraftfSteuer:137, versicherung:924, restwert:15999},
+  // F08: Dacia Jogger Extreme ECO-G 120 — LPG (ab 22.590 €, bis 1200 km, LPG 7,5 l/100 km)
+  {id:'F08', name:'Dacia Jogger Extreme ECO-G 120', antrieb:'LPG', kaufpreis:22590, reichweite:1200, co2:134.3, kraftstoff100:7.5, steuerPct:0.01, infra:4, afa:313.75, sprit5j:1035*5, wartung5j:3445, kfzSteuer:79, kraftfSteuer:113, versicherung:924, restwert:13147},
+  // F09: Hyundai NEXO 150 kW — Wasserstoff (ab 69.900 €, 751–826 km, 0,8–0,9 kg H2/100 km)
+  {id:'F09', name:'Hyundai NEXO 150 kW', antrieb:'Wasserstoff', kaufpreis:69900, reichweite:789, co2:0, kraftstoff100:0.85, steuerPct:0.0025, infra:1, afa:970.83, sprit5j:1734*5, wartung5j:3325, kfzSteuer:0, kraftfSteuer:0, versicherung:924, restwert:40682},
+  // F10: Toyota Mirai Basis — Wasserstoff (ab 68.490 €, 555 km, 0,8 kg H2/100 km)
+  {id:'F10', name:'Toyota Mirai Basis', antrieb:'Wasserstoff', kaufpreis:68490, reichweite:555, co2:0, kraftstoff100:0.8, steuerPct:0.0025, infra:1, afa:951.25, sprit5j:1632*5, wartung5j:3325, kfzSteuer:0, kraftfSteuer:0, versicherung:924, restwert:39861},
+];
+
+const ANTRIEB_FARBE = {
+  'Benzin':'#C8862B', 'Diesel':'#5C6B70', 'Elektro':'#3FA66B', 'LPG':'#7A9B6E', 'Wasserstoff':'#5B7FA6'
+};
+
+/* ============================================================
+   FAHRZEUG-SILHOUETTEN (einfache SVGs, je Karosserieform)
+   ============================================================ */
+function CarSVG({antrieb}){
+  const stroke = ANTRIEB_FARBE[antrieb] || '#5C6B70';
+  return (
+    <svg viewBox="0 0 200 90" fill="none">
+      <path d="M15 62 Q15 48 35 44 L60 28 Q72 20 90 20 L130 20 Q148 20 158 32 L172 44 Q188 46 188 62 L188 68 L15 68 Z"
+        stroke={stroke} strokeWidth="3" fill="none" strokeLinejoin="round"/>
+      <path d="M55 44 L72 28 L120 28 L140 44 Z" stroke={stroke} strokeWidth="2.5" fill="none" strokeLinejoin="round"/>
+      <circle cx="55" cy="68" r="13" stroke={stroke} strokeWidth="3" fill="#F7F4EE"/>
+      <circle cx="148" cy="68" r="13" stroke={stroke} strokeWidth="3" fill="#F7F4EE"/>
+      <circle cx="55" cy="68" r="4" fill={stroke}/>
+      <circle cx="148" cy="68" r="4" fill={stroke}/>
+    </svg>
+  );
+}
+
+/* ============================================================
+   ENTSCHEIDUNGSLOGIK — 1:1 Portierung der Excel-DSS-Formeln
+   ============================================================ */
+function pflichtpruefung(fz, eingabe){
+  if (fz.reichweite < eingabe.minReichweite){
+    return {status:'AUSGESCHLOSSEN', grund:'reichweite'};
+  }
+  if (fz.kaufpreis > eingabe.maxKaufpreis){
+    return {status:'AUSGESCHLOSSEN', grund:'budget'};
+  }
+  return {status:'QUALIFIZIERT', grund:null};
+}
+
+function scoreTCO(tco){ if(tco>=75000) return 1; if(tco>=45000) return 3; return 5; }
+function scoreReichweite(v){ if(v>=800) return 5; if(v>=500) return 3; if(v>=400) return 1; return 0; }
+function scoreInfra(antrieb){ return {'Benzin':5,'Diesel':5,'LPG':4,'Elektro':3,'Wasserstoff':1}[antrieb] || 1; }
+function scoreTankzeit(antrieb){ return {'Benzin':5,'Diesel':5,'LPG':5,'Elektro':2,'Wasserstoff':5}[antrieb] || 1; }
+function scoreCO2(v){ if(v<=55) return 5; if(v<=130) return 3; return 1; }
+function scoreNachhalt(antrieb){ return {'Elektro':5,'Wasserstoff':4,'LPG':3,'Diesel':2,'Benzin':1}[antrieb] || 1; }
+function scoreSteuer(pct){ if(pct===0.0025) return 5; if(pct===0.005) return 3; return 1; }
+function scoreKfzSteuer(fz){ const s=fz.kfzSteuer+fz.kraftfSteuer; if(s===0) return 5; if(s<=500) return 3; return 1; }
+function scoreInfraTrend(antrieb){ return {'Elektro':5,'Wasserstoff':2,'LPG':3,'Diesel':2,'Benzin':2}[antrieb] || 1; }
+function scoreRestwert(fz){ const pct=fz.restwert/fz.kaufpreis*100; if(pct<35) return 1; if(pct<45) return 3; return 5; }
+
+function berechneTCO(fz){
+  const anschaffung = fz.kaufpreis + 60;
+  const betrieb = fz.sprit5j + fz.wartung5j + (fz.kfzSteuer+fz.kraftfSteuer)*5 + fz.versicherung*5;
+  return anschaffung + betrieb - fz.restwert;
+}
+
+function berechneScores(fz, gewichte){
+  const tco = berechneTCO(fz);
+  const s1 = scoreTCO(tco);
+  const s21=scoreReichweite(fz.reichweite), s22=scoreInfra(fz.antrieb), s23=scoreTankzeit(fz.antrieb);
+  const s31=scoreCO2(fz.co2), s32=scoreNachhalt(fz.antrieb);
+  const s41=scoreSteuer(fz.steuerPct), s42=scoreKfzSteuer(fz);
+  const s51=scoreInfraTrend(fz.antrieb), s52=scoreRestwert(fz);
+
+  const d1 = s1;
+  const d2 = s21*0.50 + s22*0.35 + s23*0.15;
+  const d3 = s31*0.70 + s32*0.30;
+  const d4 = s41*0.50 + s42*0.50;
+  const d5 = s51*0.60 + s52*0.40;
+
+  const summe = gewichte.tco+gewichte.technik+gewichte.umwelt+gewichte.steuer+gewichte.zukunft;
+  const g = {
+    tco: gewichte.tco/summe, technik: gewichte.technik/summe, umwelt: gewichte.umwelt/summe,
+    steuer: gewichte.steuer/summe, zukunft: gewichte.zukunft/summe
+  };
+  const gesamt = d1*g.tco + d2*g.technik + d3*g.umwelt + d4*g.steuer + d5*g.zukunft;
+
+  return {tco, d1, d2, d3, d4, d5, gesamt, dimGewichte:g};
+}
+
+function berechneEmpfehlung(eingabe){
+  const ergebnisse = FAHRZEUGE.map(fz => {
+    const pruef = pflichtpruefung(fz, eingabe);
+    const scores = berechneScores(fz, eingabe.gewichte);
+    return {...fz, pruefung:pruef, scores};
+  });
+  const qualifiziert = ergebnisse.filter(e => e.pruefung.status === 'QUALIFIZIERT')
+    .sort((a,b) => b.scores.gesamt - a.scores.gesamt);
+  const ausgeschlossen = ergebnisse.filter(e => e.pruefung.status === 'AUSGESCHLOSSEN');
+  return {top: qualifiziert.slice(0,3), rest: qualifiziert.slice(3), ausgeschlossen};
+}
+
+function begruendung(fz, rang){
+  const d = fz.scores;
+  const staerken = [
+    {label:'niedrigste Gesamtkosten (TCO)', val:d.d1, schwelle:4},
+    {label:'hohe Reichweite & Infrastruktur', val:d.d2, schwelle:4},
+    {label:'sehr gute Umweltbilanz', val:d.d3, schwelle:4},
+    {label:'maximalen Steuervorteil (0,25%-Regel)', val:d.d4, schwelle:4},
+    {label:'hohe Zukunftsfähigkeit', val:d.d5, schwelle:4},
+  ].filter(s => s.val >= s.schwelle).map(s => s.label);
+
+  const tco = Math.round(d.tco).toLocaleString('de-DE');
+  if (rang === 0){
+    const grund = staerken.length ? staerken.slice(0,2).join(' und ') : 'eine ausgewogene Gesamtbewertung';
+    return `${fz.name} erreicht den höchsten Score (${d.gesamt.toFixed(2)} / 5,00), weil es ${grund} aufweist. Die Gesamtkosten (TCO) über 5 Jahre liegen bei ${tco} €. Alle Pflichtkriterien (Mindestreichweite, Budget) sind erfüllt.`;
+  }
+  return `${fz.name} erreicht Platz ${rang+1} mit einem Score von ${d.gesamt.toFixed(2)}. TCO über 5 Jahre: ${tco} €. ${staerken.length ? 'Stärken: ' + staerken.join(', ') + '.' : ''}`;
+}
+
+function ausschlussgrund(fz, eingabe){
+  if (fz.pruefung.grund === 'reichweite'){
+    return {text:`Reichweite (${fz.reichweite} km) liegt unter der geforderten Mindestreichweite von ${eingabe.minReichweite} km.`, badge:'range'};
+  }
+  if (fz.pruefung.grund === 'budget'){
+    return {text:`Kaufpreis (${fz.kaufpreis.toLocaleString('de-DE')} €) überschreitet das Budget-Limit von ${eingabe.maxKaufpreis.toLocaleString('de-DE')} €.`, badge:'budget'};
+  }
+  return {text:'Niedrigerer Gesamtscore im Vergleich zu den Top-3-Fahrzeugen.', badge:'score'};
+}
+
+/* ============================================================
+   GAUGE — Tacho-Nadel als Signatur-Element
+   ============================================================ */
+function ScoreGauge({score, max=5, size=120}){
+  const pct = Math.min(score/max, 1);
+  const angle = -90 + pct*180; // -90deg (links) bis +90deg (rechts)
+  const arcColor = pct > 0.75 ? '#3FA66B' : pct > 0.5 ? '#C8862B' : '#B0452E';
+  return (
+    <div className="gauge-wrap" style={{width:size, height:size*0.62}}>
+      <svg viewBox="0 0 120 74">
+        <path d="M 10 68 A 50 50 0 0 1 110 68" stroke="#EDE8DD" strokeWidth="9" fill="none" strokeLinecap="round"/>
+        <path d="M 10 68 A 50 50 0 0 1 110 68" stroke={arcColor} strokeWidth="9" fill="none" strokeLinecap="round"
+          strokeDasharray={`${pct*157} 157`} style={{transition:'stroke-dasharray 1s cubic-bezier(.34,1.4,.64,1)'}}/>
+        <g className="gauge-needle" style={{transformOrigin:'60px 68px', transform:`rotate(${angle}deg)`}}>
+          <line x1="60" y1="68" x2="60" y2="24" stroke="#1A2226" strokeWidth="2.5" strokeLinecap="round"/>
+          <circle cx="60" cy="68" r="5" fill="#1A2226"/>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+/* ============================================================
+   PWA INSTALL — Hook & Banner
+   ============================================================ */
+function useInstallPrompt(){
+  const [deferred, setDeferred] = useState(null);
+  const [installed, setInstalled] = useState(false);
+  const [iosHint, setIosHint] = useState(false);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+    setInstalled(isStandalone);
+
+    const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent) && !window.MSStream;
+    if (isIOS && !isStandalone) setIosHint(true);
+
+    function onBeforeInstall(e){
+      e.preventDefault();
+      setDeferred(e);
+    }
+    function onInstalled(){
+      setInstalled(true);
+      setDeferred(null);
+    }
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  async function promptInstall(){
+    if (!deferred) return;
+    deferred.prompt();
+    const choice = await deferred.userChoice;
+    if (choice.outcome === 'accepted') setInstalled(true);
+    setDeferred(null);
+  }
+
+  return {canInstall: !!deferred, installed, iosHint, promptInstall};
+}
+
+function InstallBanner({install}){
+  const [dismissed, setDismissed] = useState(false);
+  const show = (install.canInstall || install.iosHint) && !install.installed && !dismissed;
+
+  useEffect(() => {
+    if (show){
+      const t = setTimeout(()=>{}, 0);
+      return () => clearTimeout(t);
+    }
+  }, [show]);
+
+  return (
+    <div className={"install-banner" + (show ? " show":"")}>
+      <div className="install-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M5 11 9 15 9 15 9 3" stroke="#0D1B20" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M9 15l4-4" stroke="#0D1B20" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M4 17h12" stroke="#0D1B20" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <div className="install-text">
+        <div className="t1">App installieren</div>
+        <div className="t2">
+          {install.iosHint
+            ? "Teilen-Symbol → \"Zum Home-Bildschirm\""
+            : "Für schnellen Zugriff & Offline-Nutzung"}
+        </div>
+      </div>
+      <div className="install-actions">
+        {!install.iosHint && (
+          <button className="install-btn" onClick={install.promptInstall}>Installieren</button>
+        )}
+        <button className="install-dismiss" onClick={()=>setDismissed(true)}>×</button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+function Nav({page, install}){
+  const steps = ['start','eingabe','ergebnis','dashboard'];
+  const idx = steps.indexOf(page);
+  return (
+    <div className="nav">
+      <div className="nav-inner">
+        <div className="logo">
+          <div className="logo-mark">D</div>
+          Projekt DRIVE
+        </div>
+        <div style={{display:'flex', alignItems:'center', gap:'18px'}}>
+          <div className="nav-steps">
+            {steps.map((s,i) => (
+              <div key={s} className={"nav-dot" + (i===idx ? " active" : i<idx ? " done" : "")}/>
+            ))}
+          </div>
+          {install.canInstall && !install.installed && (
+            <button className="nav-install" onClick={install.promptInstall}>
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <path d="M5 11 9 15 9 15 9 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 15l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M4 17h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <span>App installieren</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   SEITE 1 — START
+   ============================================================ */
+function StartPage({onStart, install}){
+  return (
+    <>
+      <Nav page="start" install={install}/>
+      <div className="hero">
+        <div className="hero-inner">
+          <div className="eyebrow">Entscheidungsunterstützung für Flottenstrategie</div>
+          <h1>Finden Sie das <em>optimale Fahrzeug</em><br/>für Ihr Unternehmen.</h1>
+          <p className="lede">
+            TCO, Steuervorteile, Reichweite und CO₂ in einer datenbasierten Empfehlung —
+            in drei Minuten, ohne Excel-Kenntnisse.
+          </p>
+          <div className="cta-row">
+            <button className="btn-primary" onClick={onStart}>
+              Analyse starten
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <a className="btn-ghost" href="#methodik">Wie funktioniert die Berechnung?</a>
+          </div>
+
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <div className="num">10</div>
+              <div className="lbl">Fahrzeugmodelle<br/>analysiert</div>
+            </div>
+            <div className="hero-stat">
+              <div className="num">5</div>
+              <div className="lbl">Bewertungs-<br/>dimensionen</div>
+            </div>
+            <div className="hero-stat">
+              <div className="num">5J</div>
+              <div className="lbl">TCO-Betrachtungs-<br/>zeitraum</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="section" id="methodik">
+        <div className="container">
+          <div className="section-head">
+            <div className="section-eyebrow">Methodik</div>
+            <h2>Eine Berechnung, fünf Perspektiven.</h2>
+            <p className="sub">Jedes Fahrzeug wird entlang derselben fünf Dimensionen bewertet, die auch im
+            zugrundeliegenden Entscheidungsmodell verwendet werden — abgeleitet aus den Musskriterien
+            (Budget, Reichweite) und Sollkriterien (Steuer, Umwelt) der Projektvorgabe.</p>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'1px', background:'var(--line)', border:'1px solid var(--line)', borderRadius:'14px', overflow:'hidden'}}>
+            {[
+              {k:'TCO', v:'35%', d:'Gesamtkosten über 5 Jahre', c:'#13262E'},
+              {k:'Technik', v:'25%', d:'Reichweite & Infrastruktur', c:'#27474F'},
+              {k:'Umwelt', v:'15%', d:'CO₂-Emissionen', c:'#3FA66B'},
+              {k:'Steuer', v:'15%', d:'0,25%-/1%-Regel', c:'#C8862B'},
+              {k:'Zukunft', v:'10%', d:'Infrastruktur-Trend', c:'#5C6B70'},
+            ].map(x => (
+              <div key={x.k} style={{background:'var(--paper)', padding:'28px 22px'}}>
+                <div className="font-mono" style={{fontSize:'26px', fontWeight:700, color:x.c}}>{x.v}</div>
+                <div style={{fontWeight:600, fontSize:'14.5px', margin:'10px 0 4px'}}>{x.k}</div>
+                <div style={{fontSize:'12.5px', color:'var(--ink-soft)', lineHeight:1.4}}>{x.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   SEITE 2 — EINGABEMASKE (3-Schritt-Wizard)
+   ============================================================ */
+function Wizard({onComplete, install}){
+  const [schritt, setSchritt] = useState(0);
+  const [data, setData] = useState({
+    beschaffung: 'Kauf',
+    maxKaufpreis: 50000,
+    maxLeasingrate: 600,
+    minReichweite: 400,
+    jahresKm: 12320,
+    hatFlotte: null,          // null = noch nicht gewählt, 'ja', 'nein'
+    flotteKlasse: '',
+    flotteKraftstoff: '',
+    flotteCo2Basis: 118,      // UBA-Flottendurchschnitt als Fallback
+    gewichte: {tco:35, technik:25, umwelt:15, steuer:15, zukunft:10}
+  });
+  const [berechnet, setBerechnet] = useState(false);
+
+  const totalSteps = 4;
+  const pct = ((schritt+1)/totalSteps)*100;
+
+  function next(){
+    if (schritt < totalSteps-1){ setSchritt(schritt+1); }
+    else {
+      const flotteCo2 = berechneFlotteCo2();
+      const finalData = {...data, flotteCo2Basis: flotteCo2};
+      setBerechnet(true);
+      setTimeout(() => onComplete(finalData), 900);
+    }
+  }
+  function back(){ if (schritt>0) setSchritt(schritt-1); }
+  function setG(key, val){
+    setData({...data, gewichte:{...data.gewichte, [key]: val}});
+  }
+
+  // CO₂-Baseline nach Fahrzeugklasse (Richtwerte in g/km)
+  const CO2_KLASSEN = {
+    'Kleinwagen (z.B. Polo, Fiesta)': 110,
+    'Kompaktklasse (z.B. Golf, Focus)': 125,
+    'Mittelklasse (z.B. Passat, Mondeo)': 145,
+    'Oberklasse (z.B. BMW 5er, E-Klasse)': 185,
+    'SUV / Geländewagen': 175,
+    'Transporter / Nutzfahrzeug': 195,
+  };
+  const KRAFTSTOFF_CO2_KORREKTUREN = {
+    'Benzin': 0,
+    'Diesel': -10,
+    'LPG / Autogas': -15,
+    'Elektro': -100,
+    'Wasserstoff': -100,
+    'Hybrid': -30,
+  };
+
+  function berechneFlotteCo2(){
+    if (data.hatFlotte !== 'ja') return 118;
+    const basis = CO2_KLASSEN[data.flotteKlasse] || 118;
+    const korrektur = KRAFTSTOFF_CO2_KORREKTUREN[data.flotteKraftstoff] || 0;
+    return Math.max(0, basis + korrektur);
+  }
+
+  const gewichtSumme = Object.values(data.gewichte).reduce((a,b)=>a+b,0);
+
+  return (
+    <>
+      <Nav page="eingabe" install={install}/>
+      <div className="section" style={{paddingTop:'56px'}}>
+        <div className="container" style={{maxWidth:'760px'}}>
+          <div className="wizard-shell">
+            <div className="wizard-progress">
+              {[0,1,2,3].map(i => (
+                <div key={i} className="bar"><i style={{width: i<=schritt ? '100%':'0%'}}/></div>
+              ))}
+            </div>
+
+            {schritt === 0 && (
+              <>
+                <div className="step-label">Schritt 1 von 4</div>
+                <h3 className="step-title">Flottenkontext</h3>
+                <p className="step-desc">Diese Information hilft uns, die CO₂-Einsparung Ihres neuen Fahrzeugs gegenüber Ihrer bestehenden Situation zu berechnen.</p>
+
+                <div className="field-group">
+                  <div className="field-label">Haben Sie bereits eine bestehende Fahrzeugflotte?</div>
+                  <div className="toggle-row">
+                    {[{val:'ja', label:'Ja'}, {val:'nein', label:'Nein, Erstkäufer'}].map(opt => (
+                      <button key={opt.val} className={"toggle-chip" + (data.hatFlotte===opt.val ? " selected":"")}
+                        onClick={()=>setData({...data, hatFlotte:opt.val})}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {data.hatFlotte === 'ja' && (
+                  <>
+                    <div className="field-group">
+                      <div className="field-label">Bisherige Fahrzeugklasse</div>
+                      <select style={{width:'100%', padding:'12px 16px', borderRadius:'9px', border:'1.5px solid var(--line)', fontSize:'15px', background:'var(--paper)', color:'var(--ink)'}}
+                        value={data.flotteKlasse} onChange={e=>setData({...data, flotteKlasse:e.target.value})}>
+                        <option value="">— Bitte wählen —</option>
+                        {Object.keys(CO2_KLASSEN).map(k => <option key={k} value={k}>{k}</option>)}
+                      </select>
+                    </div>
+                    <div className="field-group">
+                      <div className="field-label">Bisherige Kraftstoffart</div>
+                      <select style={{width:'100%', padding:'12px 16px', borderRadius:'9px', border:'1.5px solid var(--line)', fontSize:'15px', background:'var(--paper)', color:'var(--ink)'}}
+                        value={data.flotteKraftstoff} onChange={e=>setData({...data, flotteKraftstoff:e.target.value})}>
+                        <option value="">— Bitte wählen —</option>
+                        {Object.keys(KRAFTSTOFF_CO2_KORREKTUREN).map(k => <option key={k} value={k}>{k}</option>)}
+                      </select>
+                    </div>
+                    {data.flotteKlasse && data.flotteKraftstoff && (
+                      <div style={{background:'var(--green-pale)', borderRadius:'10px', padding:'14px 18px', fontSize:'14px', color:'var(--green-deep)', fontWeight:500}}>
+                        ✓ Geschätzte CO₂-Baseline Ihrer bisherigen Flotte: <strong>{berechneFlotteCo2()} g/km</strong>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {data.hatFlotte === 'nein' && (
+                  <div style={{background:'var(--cream-dim)', borderRadius:'10px', padding:'14px 18px', fontSize:'14px', color:'var(--ink-soft)'}}>
+                    Als Erstkäufer verwenden wir den offiziellen UBA-Flottendurchschnitt von <strong>118 g/km</strong> als Vergleichsbasis.
+                  </div>
+                )}
+              </>
+            )}
+
+            {schritt === 1 && (
+              <>
+                <div className="step-label">Schritt 2 von 4</div>
+                <h3 className="step-title">Budget &amp; Beschaffung</h3>
+                <p className="step-desc">Legen Sie fest, wie Ihr Unternehmen das Fahrzeug erwerben möchte und welche finanziellen Grenzen gelten.</p>
+
+                <div className="field-group">
+                  <div className="field-label">Beschaffungsart</div>
+                  <div className="toggle-row">
+                    {['Kauf','Leasing','Beides offen'].map(opt => (
+                      <button key={opt} className={"toggle-chip" + (data.beschaffung===opt ? " selected":"")}
+                        onClick={()=>setData({...data, beschaffung:opt})}>{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <div className="field-label">Maximaler Kaufpreis <span className="field-value">{data.maxKaufpreis.toLocaleString('de-DE')} €</span></div>
+                  <input type="range" min="15000" max="50000" step="500" value={data.maxKaufpreis}
+                    onChange={e=>setData({...data, maxKaufpreis:Number(e.target.value)})}/>
+                  <div className="field-hint">Pflichtenheft-Vorgabe: maximal 50.000 € Kaufpreis.</div>
+                </div>
+
+                {data.beschaffung !== 'Kauf' && (
+                  <div className="field-group">
+                    <div className="field-label">Maximale Leasingrate <span className="field-value">{data.maxLeasingrate} €/Mo.</span></div>
+                    <input type="range" min="200" max="600" step="10" value={data.maxLeasingrate}
+                      onChange={e=>setData({...data, maxLeasingrate:Number(e.target.value)})}/>
+                    <div className="field-hint">Pflichtenheft-Vorgabe: maximal 600 €/Monat.</div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {schritt === 2 && (
+              <>
+                <div className="step-label">Schritt 3 von 4</div>
+                <h3 className="step-title">Nutzungsprofil</h3>
+                <p className="step-desc">Wie wird das Fahrzeug eingesetzt? Diese Angaben fließen in die Reichweiten- und Kostenberechnung ein.</p>
+
+                <div className="field-group">
+                  <div className="field-label">Mindestreichweite <span className="field-value">{data.minReichweite} km</span></div>
+                  <input type="range" min="200" max="1000" step="50" value={data.minReichweite}
+                    onChange={e=>setData({...data, minReichweite:Number(e.target.value)})}/>
+                  <div className="field-hint">Fahrzeuge unterhalb dieser Reichweite werden ausgeschlossen.</div>
+                </div>
+
+                <div className="field-group">
+                  <div className="field-label">Jahresfahrleistung <span className="field-value">{data.jahresKm.toLocaleString('de-DE')} km</span></div>
+                  <input type="range" min="5000" max="50000" step="500" value={data.jahresKm}
+                    onChange={e=>setData({...data, jahresKm:Number(e.target.value)})}/>
+                  <div className="field-hint">Deutscher Durchschnitt: 12.320 km/Jahr.</div>
+                </div>
+              </>
+            )}
+
+            {schritt === 3 && (
+              <>
+                <div className="step-label">Schritt 4 von 4</div>
+                <h3 className="step-title">Ihre Prioritäten</h3>
+                <p className="step-desc">Wie wichtig ist Ihnen jede Dimension? Die Regler starten bei den im Projekt begründeten Standardgewichten — passen Sie sie an Ihre Situation an.</p>
+
+                <div style={{marginBottom:'8px'}}>
+                  {[
+                    {key:'tco', label:'Gesamtkosten (TCO)', sub:'Anschaffung, Betrieb, Restwert über 5 Jahre'},
+                    {key:'technik', label:'Reichweite & Technik', sub:'Reichweite, Ladeinfrastruktur, Tankzeit'},
+                    {key:'umwelt', label:'Umweltfreundlichkeit', sub:'CO₂-Emissionen pro Kilometer'},
+                    {key:'steuer', label:'Steuerliche Vorteile', sub:'0,25%- vs. 1%-Regel, KFZ-Steuer'},
+                    {key:'zukunft', label:'Zukunftssicherheit', sub:'Infrastruktur-Entwicklung, Restwertstabilität'},
+                  ].map(item => (
+                    <div key={item.key} className="priority-row">
+                      <div className="priority-name">{item.label}<span className="sub">{item.sub}</span></div>
+                      <input type="range" min="0" max="100" value={data.gewichte[item.key]}
+                        onChange={e=>setG(item.key, Number(e.target.value))}/>
+                      <div className="priority-level" style={{color: data.gewichte[item.key]>=50?'var(--green-deep)': data.gewichte[item.key]>=20?'var(--ink)':'var(--ink-soft)'}}>
+                        {Math.round(data.gewichte[item.key]/gewichtSumme*100)}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="field-hint" style={{marginTop:'18px'}}>Werte werden automatisch auf 100% normiert.</div>
+              </>
+            )}
+
+            <div className="wizard-nav">
+              {schritt > 0 ? (
+                <button className="btn-back" onClick={back}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Zurück
+                </button>
+              ) : <div/>}
+              <button className={"btn-next" + (berechnet ? " calculating":"")} onClick={next} disabled={berechnet}>
+                {berechnet ? 'Wird berechnet…' : schritt===3 ? 'Empfehlung berechnen' : 'Weiter'}
+                {!berechnet && <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   SEITE 3 — ERGEBNIS
+   ============================================================ */
+function CarCard({fz, rang, eingabe, baseline}){
+  const [open, setOpen] = useState(false);
+  const medal = ['🏆 Beste Empfehlung','🥈 Alternative','🥉 Reserve'][rang];
+  const cardClass = "car-card rank-" + (rang+1);
+  const co2Einsparung = baseline - fz.co2;
+  const co2Positiv = co2Einsparung > 0;
+  return (
+    <div className={cardClass}>
+      <div className="card-medal">{medal}</div>
+      <div className="car-visual">
+        <CarSVG antrieb={fz.antrieb}/>
+        <div className="antrieb-tag">{fz.antrieb}</div>
+      </div>
+      <div className="car-body">
+        <div className="car-name">{fz.name}</div>
+        <div className="car-score-row">
+          <ScoreGauge score={fz.scores.gesamt} size={92}/>
+          <div>
+            <div className="car-score">{fz.scores.gesamt.toFixed(2)}</div>
+            <div className="car-score-max">von 5,00 Punkten</div>
+          </div>
+        </div>
+        <div className="car-specs">
+          <div className="spec"><div className="k">Kaufpreis</div><div className="v">{fz.kaufpreis.toLocaleString('de-DE')} €</div></div>
+          <div className="spec"><div className="k">Leasingrate</div><div className="v muted">noch zu recherchieren</div></div>
+          <div className="spec"><div className="k">Reichweite</div><div className="v">{fz.reichweite} km</div></div>
+          <div className="spec"><div className="k">CO₂</div><div className="v">{fz.co2.toFixed(1)} g/km</div></div>
+          <div className="spec"><div className="k">TCO (5 Jahre)</div><div className="v">{Math.round(fz.scores.tco).toLocaleString('de-DE')} €</div></div>
+          <div className="spec"><div className="k">Steuersatz</div><div className="v">{(fz.steuerPct*100).toFixed(2)}%</div></div>
+          <div className="spec" style={{gridColumn:'1 / -1'}}>
+            <div className="k">CO₂-Einsparung ggü. Baseline</div>
+            <div className="v" style={{color: co2Positiv ? 'var(--green-deep)' : 'var(--red)'}}>
+              {co2Positiv ? '−' : '+'}{Math.abs(Math.round(co2Einsparung))} g/km {co2Positiv ? '✓ Einsparung' : '▲ Mehrausstoß'}
+            </div>
+          </div>
+        </div>
+      </div>
+      <button className={"why-toggle" + (open?" open":"")} onClick={()=>setOpen(!open)}>
+        Warum dieses Fahrzeug?
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      <div className={"why-panel" + (open?" open":"")}>
+        {begruendung(fz, rang)}
+      </div>
+    </div>
+  );
+}
+
+function ErgebnisSeite({eingabe, onDashboard, install}){
+  const [ergebnis] = useState(()=>berechneEmpfehlung(eingabe));
+
+  // CO₂-Baseline ermitteln
+  const baseline = eingabe.hatFlotte === 'ja' && eingabe.flotteKlasse && eingabe.flotteKraftstoff
+    ? eingabe.flotteCo2Basis
+    : 118;
+  const szenario = eingabe.hatFlotte === 'nein' ? 'B' : 'A';
+  const szenarioText = szenario === 'B'
+    ? 'Szenario B – Erstkäufer (UBA-Flottendurchschnitt als Baseline)'
+    : 'Szenario A – Bestehende Flotte (individuelle Baseline)';
+
+  return (
+    <>
+      <Nav page="ergebnis" install={install}/>
+      <div className="result-hero">
+        <div className="eyebrow">Ihre Analyse ist abgeschlossen</div>
+        <h2>Drei Fahrzeuge erfüllen<br/>Ihre Anforderungen am besten.</h2>
+        <p>Berechnet aus {FAHRZEUGE.length} Modellen anhand Ihrer Prioritäten und Pflichtkriterien.</p>
+      </div>
+
+      <div className="container">
+        {/* CO₂-Baseline-Box */}
+        <div style={{
+          background:'var(--green-pale)', border:'1px solid #b6dfc5', borderRadius:'14px',
+          padding:'22px 28px', margin:'40px 0 8px', display:'grid',
+          gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:'20px'
+        }}>
+          <div>
+            <div style={{fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.09em', color:'var(--green-deep)', fontWeight:700, marginBottom:'4px'}}>Szenario</div>
+            <div style={{fontSize:'14px', fontWeight:600, color:'var(--ink)'}}>{szenarioText}</div>
+          </div>
+          <div>
+            <div style={{fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.09em', color:'var(--green-deep)', fontWeight:700, marginBottom:'4px'}}>CO₂-Baseline</div>
+            <div style={{fontSize:'22px', fontWeight:700, fontFamily:'JetBrains Mono', color:'var(--petrol-800)'}}>{baseline} g/km</div>
+          </div>
+          <div style={{gridColumn:'1 / -1', fontSize:'12.5px', color:'var(--green-deep)', borderTop:'1px solid #b6dfc5', paddingTop:'12px'}}>
+            Die Baseline dient als Vergleichswert zur Bewertung der Umweltwirkung. Ein Fahrzeug mit weniger als {baseline} g/km CO₂ erzielt eine positive Einsparung gegenüber dieser Referenz.
+          </div>
+        </div>
+
+        <div className="cards-row">
+          {ergebnis.top.map((fz, i) => <CarCard key={fz.id} fz={fz} rang={i} eingabe={eingabe} baseline={baseline}/>)}
+        </div>
+      </div>
+
+      {ergebnis.ausgeschlossen.length > 0 && (
+        <div className="excluded-section">
+          <div className="container">
+            <div className="section-head" style={{marginBottom:'32px'}}>
+              <div className="section-eyebrow">Erklärbarkeit</div>
+              <h2 style={{fontSize:'28px'}}>Warum wurden andere Fahrzeuge nicht empfohlen?</h2>
+            </div>
+            <div className="excluded-list">
+              {ergebnis.ausgeschlossen.map(fz => {
+                const r = ausschlussgrund(fz, eingabe);
+                return (
+                  <div className="excluded-item" key={fz.id}>
+                    <div className="excluded-name">{fz.name}</div>
+                    <div className="excluded-reason">{r.text}</div>
+                    <div className={"excluded-badge badge-" + r.badge}>
+                      {r.badge==='budget' ? 'Budget' : r.badge==='range' ? 'Reichweite' : 'Score'}
+                    </div>
+                  </div>
+                );
+              })}
+              {ergebnis.rest.map(fz => (
+                <div className="excluded-item" key={fz.id}>
+                  <div className="excluded-name">{fz.name}</div>
+                  <div className="excluded-reason">{ausschlussgrund(fz, eingabe).text} (Score: {fz.scores.gesamt.toFixed(2)})</div>
+                  <div className="excluded-badge badge-score">Score</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{textAlign:'center', padding:'0 0 90px'}}>
+        <button className="btn-primary" style={{background:'var(--petrol-900)', color:'var(--cream)'}} onClick={onDashboard}>
+          Zum Vergleichs-Dashboard
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   SEITE 4 — DASHBOARD
+   ============================================================ */
+function DashBar({label, value, max, color, unit=''}){
+  const pct = Math.min(value/max*100, 100);
+  return (
+    <div className="bar-row">
+      <div className="bar-label">{label}</div>
+      <div className="bar-track"><div className="bar-fill" style={{width:pct+'%', background:color}}/></div>
+      <div className="bar-val">{typeof value === 'number' ? Math.round(value).toLocaleString('de-DE') : value}{unit}</div>
+    </div>
+  );
+}
+
+function Dashboard({eingabe, onRestart, install}){
+  const [ergebnis] = useState(()=>berechneEmpfehlung(eingabe));
+  const alle = [...ergebnis.top, ...ergebnis.rest].sort((a,b)=>b.scores.gesamt - a.scores.gesamt);
+  const maxTco = Math.max(...alle.map(f=>f.scores.tco));
+  const maxReichweite = Math.max(...alle.map(f=>f.reichweite));
+  const maxCo2 = Math.max(...alle.map(f=>f.co2), 1);
+
+  const baseline = eingabe.hatFlotte === 'ja' && eingabe.flotteKlasse && eingabe.flotteKraftstoff
+    ? eingabe.flotteCo2Basis
+    : 118;
+  const maxEinsparung = Math.max(...alle.map(f => baseline - f.co2), 1);
+
+  return (
+    <>
+      <Nav page="dashboard" install={install}/>
+      <div className="dash-section">
+        <div className="container">
+          <div className="section-eyebrow" style={{color:'var(--green)'}}>Vergleichs-Dashboard</div>
+          <h2 className="font-display" style={{fontSize:'36px', fontWeight:600, margin:'0 0 8px'}}>Alle qualifizierten Fahrzeuge im Vergleich</h2>
+          <p style={{color:'rgba(247,244,238,0.6)', fontSize:'15px', maxWidth:'520px'}}>
+            {alle.length} von {FAHRZEUGE.length} Fahrzeugen erfüllen Ihre Pflichtkriterien.
+          </p>
+
+          <div className="dash-grid">
+            <div className="dash-card">
+              <h4>TCO-Vergleich (5 Jahre)</h4>
+              {alle.map(f => <DashBar key={f.id} label={f.name} value={f.scores.tco} max={maxTco} color="#C8862B" unit=" €"/>)}
+            </div>
+            <div className="dash-card">
+              <h4>Reichweitenvergleich</h4>
+              {alle.map(f => <DashBar key={f.id} label={f.name} value={f.reichweite} max={maxReichweite} color="#27474F" unit=" km"/>)}
+            </div>
+            <div className="dash-card">
+              <h4>Umweltbewertung (CO₂ g/km)</h4>
+              {alle.map(f => <DashBar key={f.id} label={f.name} value={f.co2} max={maxCo2} color={f.co2 < 60 ? "#3FA66B" : f.co2 < 130 ? "#C8862B" : "#B0452E"} unit=" g/km"/>)}
+            </div>
+            <div className="dash-card">
+              <h4>Gesamtscore</h4>
+              {alle.map(f => <DashBar key={f.id} label={f.name} value={f.scores.gesamt} max={5} color="#3FA66B"/>)}
+            </div>
+            <div className="dash-card">
+              <h4>CO₂-Einsparung ggü. Baseline ({baseline} g/km)</h4>
+              {alle.map(f => {
+                const einsp = baseline - f.co2;
+                const positiv = einsp > 0;
+                return (
+                  <div className="bar-row" key={f.id}>
+                    <div className="bar-label">{f.name}</div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{
+                        width: positiv ? Math.min(einsp/maxEinsparung*100, 100)+'%' : '3%',
+                        background: positiv ? '#3FA66B' : '#B0452E'
+                      }}/>
+                    </div>
+                    <div className="bar-val" style={{color: positiv ? '#3FA66B' : '#B0452E', width:'90px'}}>
+                      {positiv ? '−' : '+'}{Math.abs(Math.round(einsp))} g/km
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{textAlign:'center', padding:'56px 0'}}>
+        <button className="btn-ghost" style={{color:'var(--ink-soft)', borderColor:'var(--line)'}} onClick={onRestart}>
+          Neue Analyse starten
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ============================================================
+   APP ROOT
+   ============================================================ */
+function App(){
+  const [page, setPage] = useState('start');
+  const [eingabe, setEingabe] = useState(null);
+  const install = useInstallPrompt();
+
+  function handleComplete(data){
+    setEingabe(data);
+    setPage('ergebnis');
+  }
+
+  return (
+    <div>
+      {page === 'start' && <StartPage onStart={()=>setPage('eingabe')} install={install}/>}
+      {page === 'eingabe' && <Wizard onComplete={handleComplete} install={install}/>}
+      {page === 'ergebnis' && eingabe && <ErgebnisSeite eingabe={eingabe} onDashboard={()=>setPage('dashboard')} install={install}/>}
+      {page === 'dashboard' && eingabe && <Dashboard eingabe={eingabe} onRestart={()=>{setEingabe(null); setPage('start');}} install={install}/>}
+
+      <InstallBanner install={install}/>
+
+      <footer>
+        <div className="container">
+          <div className="footer-row">
+            <p>Projekt DRIVE — Web-Konzept · Gruppe 6 · Hochschule Ruhr West</p>
+            <p>Basis: Excel-DSS (TCO-, Steuer- und Bewertungsmatrix)</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      // Service Worker konnte nicht registriert werden (z.B. file://-Protokoll) —
+      // die App funktioniert trotzdem normal im Browser, nur ohne Offline-Cache.
+    });
+  });
+}
+
+</script>
+</body>
+</html>
